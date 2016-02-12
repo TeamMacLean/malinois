@@ -14,6 +14,8 @@ import (
 
 const (
 	PORT = ":8888"
+	//TRAVIS_API_PREFIX = "api.travis-ci.org/repos/"
+	//TRAVIS_API_POSTFIX = "/builds"
 )
 
 var (
@@ -72,7 +74,7 @@ func main() {
 
 func NAMEME(w http.ResponseWriter, r *http.Request) {
 
-	println(r.URL.Query())
+	//queryURL = TRAVIS_API_PREFIX + "TODO" + TRAVIS_API_POSTFIX
 
 	thisMonitor := monitors[0]
 	go runMonitorAction(thisMonitor)
