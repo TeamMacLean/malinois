@@ -1,0 +1,12 @@
+- github: TeamMacLean/geefu.io
+  travis: TeamMacLean/geefu.io
+  dir: /opt/geefu.io
+  action:
+    - echo "test 1"
+    - echo "test 2"
+- github: TeamMacLean/datahog
+  travis: TeamMacLean/datahog
+  dir: /opt/datahog
+  action:
+    - echo "test 1"
+    - echo "test 2"
