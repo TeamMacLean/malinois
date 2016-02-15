@@ -26,9 +26,10 @@ var (
 )
 
 type Monitor struct {
-	Travis  string `json:"travis" yaml:"travis"`
-	Dir     string `json:"dir" yaml:"dir"`
-	Actions []string `json:"action" yaml:"action"`
+	Travis        string `json:"travis" yaml:"travis"`
+	Dir           string `json:"dir" yaml:"dir"`
+	Actions       []string `json:"action" yaml:"action"`
+	CurrentCommit string
 }
 
 type Route struct {
@@ -113,7 +114,7 @@ func NewRouter() *mux.Router {
 	return router
 }
 
-func checkAPIForSuccess(m Monitor) bool {
+func checkAPIForSuccess(m Monitor) Build {
 
 	apiPath := TRAVIS_API_PREFIX + m.Travis + TRAVIS_API_POSTFIX
 	response, err := http.Get(apiPath)
@@ -127,15 +128,15 @@ func checkAPIForSuccess(m Monitor) bool {
 
 	if (len(builds) < 1) {
 		println("no builds for", m.Travis, "found, you may wish to check the spelling")
-		return false;
+		return nil;
 	} else {
 		latestBuild := builds[0]
 
 		if (latestBuild.Result == 0) {
-			return true;
+			return latestBuild;
 
 		} else {
-			return false;
+			return nil;
 		}
 	}
 }
@@ -191,13 +192,23 @@ func Index(w http.ResponseWriter, r *http.Request) {
 
 func runMonitorAction(m Monitor) {
 
-	if (checkAPIForSuccess(m)) {
-		println("running actions for", m.Travis)
-		os.Chdir(m.Dir)
-		for _, action := range m.Actions {
-			runAction(action)
+	latestBuild := checkAPIForSuccess(m)
+
+	if (latestBuild != nil) {
+
+		//TODO check if we have run actions for this commit
+		if (latestBuild.Commit != m.CurrentCommit) {
+			m.CurrentCommit = latestBuild.Commit
+			println("running actions for", m.Travis)
+			os.Chdir(m.Dir)
+			for _, action := range m.Actions {
+				runAction(action)
+			}
+			os.Chdir(ORIGINAL_WORKING_DIR)
+		} else {
+			println("the actions for this commit have already been run")
 		}
-		os.Chdir(ORIGINAL_WORKING_DIR)
+
 	} else {
 		println("the latest build failed, not running actions for", m.Travis);
 	}
