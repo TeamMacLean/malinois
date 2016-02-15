@@ -4,7 +4,11 @@
 ## Install
 
 go build malinois.go
-//TODO
+
+
+## Run
+
+nohup ./malinois &
 
 ## Supported Continuous Integration Services
 
@@ -32,6 +36,6 @@ Config for Travis
 ```
 ...
 after_success:
-    curl --data "repo=$TRAVIS_REPO_SLUG" http://127.0.0.1:8888
+    curl --data "repo=$TRAVIS_REPO_SLUG" http://example.org:8888
 ...
 ```
