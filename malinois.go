@@ -24,7 +24,6 @@ var (
 )
 
 type Monitor struct {
-	Github  string `json:"github" yaml:"github"`
 	Travis  string `json:"travis" yaml:"travis"`
 	Dir     string `json:"dir" yaml:"dir"`
 	Actions []string `json:"action" yaml:"action"`
