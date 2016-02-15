@@ -5,17 +5,18 @@ import (
 	"io/ioutil"
 	"github.com/gorilla/mux"
 	"net/http"
-	"fmt"
 	"log"
 	"os/exec"
 	"os"
 	"strings"
+	"encoding/json"
+	"fmt"
 )
 
 const (
 	PORT = ":8888"
-//TRAVIS_API_PREFIX = "api.travis-ci.org/repos/"
-//TRAVIS_API_POSTFIX = "/builds"
+	TRAVIS_API_PREFIX = "http://api.travis-ci.org/repos/"
+	TRAVIS_API_POSTFIX = "/builds"
 )
 
 var (
@@ -36,6 +37,21 @@ type Route struct {
 	HandlerFunc http.HandlerFunc
 }
 type Routes []Route
+
+type Build struct {
+	ID          int
+	Repo_ID     int
+	Number      string
+	State       string
+	Result      int
+	Started_at  string
+	Finished_at string
+	Duration    int
+	Commit      string
+	Branch      string
+	Message     string
+	Event_type  string
+}
 
 var routes = Routes{
 	Route{
@@ -93,12 +109,66 @@ func NewRouter() *mux.Router {
 	return router
 }
 
+func checkAPIForSuccess(m Monitor) bool {
+
+	apiPath := TRAVIS_API_PREFIX + m.Travis + TRAVIS_API_POSTFIX
+	response, err := http.Get(apiPath)
+
+	checkSoft(err)
+
+	decoder := json.NewDecoder(response.Body)
+	var builds []Build
+	err = decoder.Decode(&builds)
+	checkSoft(err)
+
+	if (len(builds) < 1) {
+		println("no builds for", m.Travis, "found, you may wish to check the spelling")
+		return false;
+	} else {
+		latestBuild := builds[0]
+
+		if (latestBuild.Result == 0) {
+			return true;
+
+		} else {
+			return false;
+		}
+	}
+}
+
 func loadConfig() {
 	monitors = []Monitor{}
 	dat, err := ioutil.ReadFile(".malinois.yml")
-	check(err)
+	checkHard(err)
 	err = yaml.Unmarshal(dat, &monitors)
-	check(err)
+	checkHard(err)
+
+	for _, m := range monitors {
+
+		apiPath := TRAVIS_API_PREFIX + m.Travis + TRAVIS_API_POSTFIX
+
+		response, err := http.Get(apiPath)
+
+		checkHard(err)
+
+		if (response.StatusCode == 200) {
+
+			decoder := json.NewDecoder(response.Body)
+			var builds []Build
+			err := decoder.Decode(&builds)
+			checkHard(err)
+
+			if (len(builds) < 1) {
+				println("no builds for", m.Travis, "found, you may wish to check the spelling")
+			}
+
+		} else {
+			log.Fatal(m.Travis, " returned a non 200 status code")
+		}
+
+	}
+
+	println("loaded config OK")
 }
 
 func checkForGit() (path string, err error) {
@@ -117,14 +187,17 @@ func Index(w http.ResponseWriter, r *http.Request) {
 
 func runMonitorAction(m Monitor) {
 
-	//TOCO check via API!!!
-
-	println("running actions for", m.Travis)
-	os.Chdir(m.Dir)
-	for _, action := range m.Actions {
-		runAction(action)
+	if (checkAPIForSuccess(m)) {
+		println("running actions for", m.Travis)
+		os.Chdir(m.Dir)
+		for _, action := range m.Actions {
+			runAction(action)
+		}
+		os.Chdir(ORIGINAL_WORKING_DIR)
+	} else {
+		println("the latest build failed, not running actions for", m.Travis);
 	}
-	os.Chdir(ORIGINAL_WORKING_DIR)
+
 }
 
 func runAction(action string) (output []byte, err error) {
@@ -133,13 +206,20 @@ func runAction(action string) (output []byte, err error) {
 	var args = sSlice[1:len(sSlice)]
 	out, err := exec.Command(command, args...).Output()
 	if (err != nil) {
-		fmt.Printf("error %s\n", err)
+		println("error %s\n", err)
 	}
 	return out, err
 }
 
-func check(e error) {
+func checkHard(e error) {
+	//causes exit
 	if e != nil {
 		log.Fatal(e)
+	}
+}
+func checkSoft(e error) {
+	//does not cause exit
+	if (e != nil) {
+		println("ERROR!", e)
 	}
 }
