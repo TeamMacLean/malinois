@@ -5,8 +5,10 @@
 
 * Travis-ci.org
 
+## Config
 
-.malinois.yml example
+Config cor Malinois
+.malinois.yml
 ```
 - travis: TeamMacLean/geefu.io
   dir: /opt/geefu.io
@@ -20,6 +22,7 @@
     - pm2 restart
 ```
 
+Config for Travis
 .travis.yml
 ```
 ...
