@@ -12,6 +12,7 @@ import (
 	"strings"
 	"encoding/json"
 	"fmt"
+	"errors"
 )
 
 const (
@@ -114,7 +115,7 @@ func NewRouter() *mux.Router {
 	return router
 }
 
-func checkAPIForSuccess(m Monitor) Build {
+func checkAPIForSuccess(m Monitor) (Build, error) {
 
 	apiPath := TRAVIS_API_PREFIX + m.Travis + TRAVIS_API_POSTFIX
 	response, err := http.Get(apiPath)
@@ -128,15 +129,15 @@ func checkAPIForSuccess(m Monitor) Build {
 
 	if (len(builds) < 1) {
 		println("no builds for", m.Travis, "found, you may wish to check the spelling")
-		return nil;
+		return Build{}, errors.New("no builds")
 	} else {
 		latestBuild := builds[0]
 
 		if (latestBuild.Result == 0) {
-			return latestBuild;
+			return latestBuild, nil;
 
 		} else {
-			return nil;
+			return Build{}, errors.New("non 0 result for build")
 		}
 	}
 }
@@ -192,10 +193,11 @@ func Index(w http.ResponseWriter, r *http.Request) {
 
 func runMonitorAction(m Monitor) {
 
-	latestBuild := checkAPIForSuccess(m)
+	latestBuild, err := checkAPIForSuccess(m)
 
-	if (latestBuild != nil) {
-
+	if (err != nil) {
+		println("the latest build failed, not running actions for", m.Travis);
+	} else {
 		//TODO check if we have run actions for this commit
 		if (latestBuild.Commit != m.CurrentCommit) {
 			m.CurrentCommit = latestBuild.Commit
@@ -208,9 +210,6 @@ func runMonitorAction(m Monitor) {
 		} else {
 			println("the actions for this commit have already been run")
 		}
-
-	} else {
-		println("the latest build failed, not running actions for", m.Travis);
 	}
 
 }
