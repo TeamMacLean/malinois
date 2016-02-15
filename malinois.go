@@ -23,7 +23,7 @@ const (
 
 var (
 	ORIGINAL_WORKING_DIR string
-	monitors []Monitor
+	monitors []*Monitor
 )
 
 type Monitor struct {
@@ -31,6 +31,10 @@ type Monitor struct {
 	Dir           string `json:"dir" yaml:"dir"`
 	Actions       []string `json:"action" yaml:"action"`
 	CurrentCommit string
+}
+
+func (m *Monitor) SetCommit(commit string) {
+	m.CurrentCommit = commit
 }
 
 type Route struct {
@@ -115,7 +119,7 @@ func NewRouter() *mux.Router {
 	return router
 }
 
-func checkAPIForSuccess(m Monitor) (Build, error) {
+func checkAPIForSuccess(m *Monitor) (Build, error) {
 
 	apiPath := TRAVIS_API_PREFIX + m.Travis + TRAVIS_API_POSTFIX
 	response, err := http.Get(apiPath)
@@ -132,7 +136,6 @@ func checkAPIForSuccess(m Monitor) (Build, error) {
 		return Build{}, errors.New("no builds")
 	} else {
 		latestBuild := builds[0]
-
 		if (latestBuild.Result == 0) {
 			return latestBuild, nil;
 
@@ -143,7 +146,7 @@ func checkAPIForSuccess(m Monitor) (Build, error) {
 }
 
 func loadConfig() {
-	monitors = []Monitor{}
+	monitors = []*Monitor{}
 	dat, err := ioutil.ReadFile(".malinois.yml")
 	checkHard(err)
 	err = yaml.Unmarshal(dat, &monitors)
@@ -191,7 +194,7 @@ func Index(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, monitors)
 }
 
-func runMonitorAction(m Monitor) {
+func runMonitorAction(m *Monitor) {
 
 	latestBuild, err := checkAPIForSuccess(m)
 
@@ -200,7 +203,10 @@ func runMonitorAction(m Monitor) {
 	} else {
 		//TODO check if we have run actions for this commit
 		if (latestBuild.Commit != m.CurrentCommit) {
-			m.CurrentCommit = latestBuild.Commit
+			m.SetCommit(latestBuild.Commit)
+
+			println("commit", m.CurrentCommit)
+
 			println("running actions for", m.Travis)
 			os.Chdir(m.Dir)
 			for _, action := range m.Actions {
@@ -220,7 +226,7 @@ func runAction(action string) (output []byte, err error) {
 	var args = sSlice[1:len(sSlice)]
 	out, err := exec.Command(command, args...).Output()
 	if (err != nil) {
-		println("error", err)
+		log.Println("error!",err)
 	}
 	return out, err
 }
