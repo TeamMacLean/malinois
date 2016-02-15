@@ -14,8 +14,8 @@ import (
 
 const (
 	PORT = ":8888"
-	//TRAVIS_API_PREFIX = "api.travis-ci.org/repos/"
-	//TRAVIS_API_POSTFIX = "/builds"
+//TRAVIS_API_PREFIX = "api.travis-ci.org/repos/"
+//TRAVIS_API_POSTFIX = "/builds"
 )
 
 var (
@@ -40,23 +40,17 @@ type Routes []Route
 
 var routes = Routes{
 	Route{
-		"Index",
+		"Index Show",
 		"GET",
 		"/",
 		Index,
 	},
 	Route{
-		"FF",
+		"Index Post",
 		"POST",
 		"/",
-		NAMEME,
+		PostUpdate,
 	},
-	//Route{
-	//	"TodoShow",
-	//	"GET",
-	//	"/todos/{todoId}",
-	//	TodoShow,
-	//},
 }
 
 func main() {
@@ -72,14 +66,18 @@ func main() {
 	startServer()
 }
 
-func NAMEME(w http.ResponseWriter, r *http.Request) {
-
-	//queryURL = TRAVIS_API_PREFIX + "TODO" + TRAVIS_API_POSTFIX
-
-	thisMonitor := monitors[0]
-	go runMonitorAction(thisMonitor)
-
-	fmt.Fprintln(w, "Welcome!")
+func PostUpdate(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	for _, v := range r.Form {
+		vJoined := strings.Join(v, "")
+		println("received request for", vJoined)
+		for _, mv := range monitors {
+			if (strings.ToLower(vJoined) == strings.ToLower(mv.Travis)) {
+				go runMonitorAction(mv)
+			}
+		}
+	}
+	fmt.Fprintln(w, "done")
 }
 
 func NewRouter() *mux.Router {
@@ -109,9 +107,7 @@ func checkForGit() (path string, err error) {
 }
 
 func startServer() {
-
 	router := NewRouter()
-
 	println("starting server on port", PORT)
 	log.Fatal(http.ListenAndServe(PORT, router))
 }
@@ -121,6 +117,10 @@ func Index(w http.ResponseWriter, r *http.Request) {
 }
 
 func runMonitorAction(m Monitor) {
+
+	//TOCO check via API!!!
+
+	println("running actions for", m.Travis)
 	os.Chdir(m.Dir)
 	for _, action := range m.Actions {
 		runAction(action)
@@ -129,22 +129,13 @@ func runMonitorAction(m Monitor) {
 }
 
 func runAction(action string) (output []byte, err error) {
-
-	println("running action");
-
 	var sSlice = strings.Split(action, " ")
-
 	var command = sSlice[0]
-
 	var args = sSlice[1:len(sSlice)]
-
 	out, err := exec.Command(command, args...).Output()
-
 	if (err != nil) {
 		fmt.Printf("error %s\n", err)
 	}
-	fmt.Printf("output %s\n", out)
-
 	return out, err
 }
 
