@@ -7,7 +7,7 @@
 
 ## Config
 
-Config cor Malinois
+Config for Malinois
 .malinois.yml
 ```
 - travis: TeamMacLean/geefu.io
