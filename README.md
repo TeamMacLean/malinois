@@ -1,6 +1,11 @@
 # Malinois
 > continuous deployment... thing
 
+## Install
+
+go build malinois.go
+//TODO
+
 ## Supported Continuous Integration Services
 
 * Travis-ci.org

@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "crypto/sha512"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"github.com/gorilla/mux"
@@ -82,6 +83,9 @@ func main() {
 }
 
 func PostUpdate(w http.ResponseWriter, r *http.Request) {
+
+	println("receiving....")
+
 	r.ParseForm()
 	for _, v := range r.Form {
 		vJoined := strings.Join(v, "")
