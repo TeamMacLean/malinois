@@ -210,7 +210,7 @@ func runAction(action string) (output []byte, err error) {
 	var args = sSlice[1:len(sSlice)]
 	out, err := exec.Command(command, args...).Output()
 	if (err != nil) {
-		println("error %s\n", err)
+		println("error", err)
 	}
 	return out, err
 }

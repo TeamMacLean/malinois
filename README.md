@@ -19,12 +19,12 @@ Config for Malinois
   dir: /opt/geefu.io
   action:
     - git pull
-    - pm2 restart
+    - pm2 restart geefu.io
 - travis: TeamMacLean/datahog
   dir: /opt/datahog
   action:
     - git pull
-    - pm2 restart
+    - pm2 restart datahog
 ```
 
 Config for Travis

@@ -1,10 +1,10 @@
 - travis: TeamMacLean/geefu.io
   dir: /opt/geefu.io
   action:
-    - echo "test 1"
-    - echo "test 2"
+    - git pull
+    - pm2 restart geefu.io
 - travis: TeamMacLean/dataHog
   dir: /opt/datahog
   action:
-    - echo "test 1"
-    - echo "test 2"
+    - git pull
+    - pm2 restart datahog
